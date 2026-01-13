@@ -2,6 +2,7 @@ package com.raghav.ragchatbot;
 
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
@@ -89,10 +90,12 @@ public class ChatBotService {
     @PostConstruct
     public void initVectorDatabase(){
         try{
-            vectorStore.accept(
-                    getDocsFromPDF()
-            );
-            log.info("Data Loaded in Vector");
+            if (vectorStore.similaritySearch("test").isEmpty()) {
+                log.info("initVectorDatabase: Data is not present");
+                vectorStore.accept(getDocsFromPDF());
+                log.info("Data Loaded in Vector");
+                return;
+            }
 
             template = """
                 You are an expert Indian food assistant.
@@ -115,7 +118,12 @@ public class ChatBotService {
         TextSplitter textSplitter = TokenTextSplitter.builder()
                 .withChunkSize(500)
                 .build();
-        List<Document> documents = textSplitter.apply(pdfReader.get());
+        List<Document> documents = textSplitter.apply(pdfReader.get()).stream().map(doc->{
+            String stableId = DigestUtils.sha256Hex(doc.getText());
+            doc = new Document(stableId, doc.getText(), doc.getMetadata());
+            log.info("Mapping the Doc:"+doc.getText());
+            return doc;
+        }).toList();
         log.info("Total chunks created: {}", documents.size());
         log.info("Doc generated:");
         documents.forEach(doc -> {
