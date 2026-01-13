@@ -4,6 +4,8 @@ WORKDIR /app
 
 # Copy only Gradle files first (maximizes cache)
 COPY gradlew .
+RUN chmod +x gradlew
+
 COPY gradle gradle
 COPY build.gradle .
 COPY settings.gradle .
