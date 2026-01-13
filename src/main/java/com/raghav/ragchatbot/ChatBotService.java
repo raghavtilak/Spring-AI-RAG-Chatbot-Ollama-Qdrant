@@ -2,7 +2,6 @@ package com.raghav.ragchatbot;
 
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
@@ -19,8 +18,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Random;
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -119,8 +120,15 @@ public class ChatBotService {
                 .withChunkSize(500)
                 .build();
         List<Document> documents = textSplitter.apply(pdfReader.get()).stream().map(doc->{
-            String stableId = DigestUtils.sha256Hex(doc.getText());
+            String contentForId =
+                    doc.getText() + "|" + doc.getMetadata().get("page");
+
+            String stableId = UUID.nameUUIDFromBytes(
+                    contentForId.getBytes(StandardCharsets.UTF_8)
+            ).toString();
+
             doc = new Document(stableId, doc.getText(), doc.getMetadata());
+
             log.info("Mapping the Doc:"+doc.getText());
             return doc;
         }).toList();

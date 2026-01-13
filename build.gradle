@@ -30,8 +30,6 @@ dependencies {
 	implementation 'org.springframework.ai:spring-ai-starter-vector-store-qdrant'
 	implementation 'org.springframework.ai:spring-ai-rag'
 
-	implementation 'commons-codec:commons-codec:1.16.1'
-
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 
