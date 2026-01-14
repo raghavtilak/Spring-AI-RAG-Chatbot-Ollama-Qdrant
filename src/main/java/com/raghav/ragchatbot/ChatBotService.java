@@ -151,9 +151,12 @@ public class ChatBotService {
         Flux<String> content = chatClient.prompt()
                 .advisors(retrievalAugmentationAdvisor)
                 .user(query)
+
                 .stream()
                 .content()
-                .transform(flux->toChunk(flux,20));
+                .buffer(20)
+                .map(tokens -> String.join(" ", tokens));
+//                .transform(flux->toChunk(flux,20));
         return content;
     }
 

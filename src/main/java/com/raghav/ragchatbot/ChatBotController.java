@@ -29,7 +29,7 @@ public class ChatBotController {
     //streaming
     @GetMapping(value = "/stream/{query}",produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<String> streamChat(@PathVariable("query") String query){
-        return chatBotService.streamChat(query);
+        return chatBotService.streamChat(query).concatWith(Flux.just("[DONE]"));
     }
 
 }
