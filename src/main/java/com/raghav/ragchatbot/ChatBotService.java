@@ -152,11 +152,40 @@ public class ChatBotService {
                 .advisors(retrievalAugmentationAdvisor)
                 .user(query)
                 .stream()
-                .content();
+                .content()
 //                .buffer(20)
 //                .map(tokens -> String.join(" "))
 //                .transform(flux->toChunk(flux,20));
+                .transform(this::bufferToWords);
+
         return content;
+    }
+
+    private Flux<String> bufferToWords(Flux<String> tokenFlux) {
+        return Flux.create(sink -> {
+            StringBuilder buffer = new StringBuilder();
+
+            tokenFlux.subscribe(
+                    token -> {
+                        buffer.append(token);
+
+                        // Emit only when a word boundary is reached
+                        if (token.endsWith(" ") || token.endsWith("\n") ||
+                                token.endsWith(".") || token.endsWith(",")) {
+
+                            sink.next(buffer.toString());
+                            buffer.setLength(0);
+                        }
+                    },
+                    sink::error,
+                    () -> {
+                        if (buffer.length() > 0) {
+                            sink.next(buffer.toString());
+                        }
+                        sink.complete();
+                    }
+            );
+        });
     }
 
     private Flux<String> toChunk(Flux<String> tokenFlux, int chunkSize) {
